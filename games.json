@@ -1,0 +1,47 @@
+[
+  {
+    "id": "hotline-miami",
+    "title": "HOTLINE MIAMI",
+    "desc": "1989 Miami. Visceral violence. An answering machine message sends you down a bloody path through the criminal underworld.",
+    "path": "games/hotline-miami/index.html",
+    "accent": "#ff2a6d",
+    "tags": ["action", "stealth", "top-down"],
+    "controls": [
+      ["WASD", "Move"],
+      ["MOUSE", "Aim"],
+      ["LEFT CLICK", "Shoot / Attack"],
+      ["RIGHT CLICK", "Throw weapon"],
+      ["SPACE", "Pick up weapon"],
+      ["R", "Reload"],
+      ["E", "Interact / Open doors"]
+    ]
+  },
+  {
+    "id": "cuphead",
+    "title": "CUPHEAD",
+    "desc": "Run and gun through surreal 1930s hand-drawn cartoons. Every boss is a masterpiece. Every death is personal.",
+    "path": "games/cuphead/cuphead-main/index.html",
+    "accent": "#ffae00",
+    "tags": ["action", "platformer", "boss-rush"],
+    "controls": [
+      ["WASD / ARROWS", "Move"],
+      ["Z / J", "Shoot"],
+      ["X / K", "Special attack"],
+      ["SHIFT", "Dash / Parry"],
+      ["SPACE", "Lock aim direction"]
+    ]
+  },
+  {
+    "id": "getting-over-it",
+    "title": "GETTING OVER IT",
+    "desc": "A man in a cauldron with a hammer. Mountains of junk. Bennett Foddy narrates your descent into madness.",
+    "path": "games/getting-over-it/index.html",
+    "accent": "#05d9e8",
+    "tags": ["physics", "rage", "climbing"],
+    "controls": [
+      ["MOUSE", "Control hammer"],
+      ["CLICK + DRAG", "Swing hammer"],
+      ["SPACE", "Reset to checkpoint"]
+    ]
+  }
+]

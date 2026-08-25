@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NEON VAULT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pink: #ff2a6d;
+            --cyan: #05d9e8;
+            --yellow: #ffea00;
+            --green: #39ff14;
+            --dark: #0c0c10;
+            --term-bg: #14141c;
+            --term-border: #2e2e3a;
+            --text-dim: #9a9ab0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scrollbar-width: thin; scrollbar-color: var(--pink) var(--dark); }
+
+        body {
+            background: var(--dark);
+            color: #eaeaef;
+            font-family: 'IBM Plex Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.25) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            padding: 28px 32px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 22px;
+            color: var(--pink);
+            text-shadow: 0 0 15px rgba(255,42,109,0.5);
+            letter-spacing: 3px;
+            animation: glitch 5s infinite;
+        }
+
+        @keyframes glitch {
+            0%,94%,100% { transform: none; text-shadow: 0 0 15px rgba(255,42,109,0.5); }
+            95% { transform: translate(-2px,1px); text-shadow: 2px 0 var(--cyan),-2px 0 var(--yellow); }
+            96% { transform: translate(2px,-1px); text-shadow: -2px 0 var(--cyan),2px 0 var(--yellow); }
+            97% { transform: translate(-1px,-1px); text-shadow: 1px 0 var(--cyan),-1px 0 var(--yellow); }
+            98% { transform: translate(1px,1px); text-shadow: -1px 0 var(--cyan),1px 0 var(--yellow); }
+        }
+
+        .header .ver {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .header .ver span { color: var(--cyan); }
+
+        /* ── TERMINAL ── */
+        .term-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 32px 0;
+            min-height: 0;
+        }
+
+        .term {
+            flex: 1;
+            background: var(--term-bg);
+            border: 1px solid var(--term-border);
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+            max-height: 70vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .term-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--term-border);
+            background: rgba(255,255,255,0.03);
+            user-select: none;
+        }
+
+        .term-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            opacity: 1;
+        }
+
+        .term-dot.r { background: var(--pink); }
+        .term-dot.y { background: var(--yellow); }
+        .term-dot.g { background: var(--green); }
+
+        .term-title {
+            margin-left: 8px;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        .term-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 18px;
+            font-size: 13px;
+            line-height: 1.7;
+            scroll-behavior: smooth;
+        }
+
+        .term-body::-webkit-scrollbar { width: 5px; }
+        .term-body::-webkit-scrollbar-track { background: transparent; }
+        .term-body::-webkit-scrollbar-thumb { background: var(--term-border); }
+
+        .term-line { white-space: pre-wrap; word-break: break-word; }
+        .term-line + .term-line { margin-top: 2px; }
+
+        .t-pink { color: var(--pink); }
+        .t-cyan { color: var(--cyan); }
+        .t-yellow { color: var(--yellow); }
+        .t-green { color: var(--green); }
+        .t-dim { color: var(--text-dim); }
+        .t-white { color: #f8f8ff; }
+        .t-bold { font-weight: 500; }
+
+        .t-prompt { color: var(--pink); }
+        .t-prompt::before { content: "neon:"; color: var(--text-dim); }
+        .t-prompt::after { content: "$"; color: var(--cyan); margin-right: 8px; }
+
+        /* input line */
+        .term-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 0 18px 14px;
+            gap: 0;
+        }
+
+        .term-input-wrap .t-prompt { flex-shrink: 0; }
+
+        #cmd-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #e8e8f0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            caret-color: var(--cyan);
+            letter-spacing: 0.5px;
+        }
+
+        #cmd-input::placeholder { color: #2a2a3a; }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background: var(--cyan);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+            flex-shrink: 0;
+        }
+
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ── GAME CARDS (secondary) ── */
+        .cards-section {
+            padding: 20px 32px 0;
+        }
+
+        .cards-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .cards-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+
+        .cards-row::-webkit-scrollbar { display: none; }
+
+        .mini-card {
+            flex-shrink: 0;
+            background: var(--term-bg);
+            border: 1px solid var(--term-border);
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            min-width: 220px;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .mini-card:hover {
+            border-color: var(--mc, var(--pink));
+            box-shadow: 0 0 20px color-mix(in srgb, var(--mc, var(--pink)) 12%, transparent);
+        }
+
+        .mini-card .mc-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--mc, var(--pink));
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .mini-card .mc-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            padding: 16px 32px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-l {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer-r {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            color: var(--pink);
+            opacity: 0.55;
+            letter-spacing: 2px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .header { padding: 20px 16px 0; }
+            .header h1 { font-size: 16px; }
+            .term-wrap { padding: 16px 16px 0; }
+            .term { min-height: 340px; max-height: 60vh; }
+            .cards-section { padding: 16px 16px 0; }
+            .footer { padding: 12px 16px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>NEON VAULT</h1>
+        <span class="ver">v<span>1.0</span> // terminal edition</span>
+    </div>
+
+    <div class="term-wrap">
+        <div class="term">
+            <div class="term-bar">
+                <div class="term-dot r"></div>
+                <div class="term-dot y"></div>
+                <div class="term-dot g"></div>
+                <span class="term-title">NEON VAULT // BROWSER GAME SHELL</span>
+            </div>
+            <div class="term-body" id="term-body"></div>
+            <div class="term-input-wrap">
+                <span class="t-prompt"></span>
+                <input id="cmd-input" type="text" placeholder="type a command..." autocomplete="off" spellcheck="false" autofocus>
+                <span class="cursor-blink"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="cards-section">
+        <div class="cards-label">// QUICK LAUNCH</div>
+        <div class="cards-row" id="cards-row"></div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-l">type <span class="t-cyan">help</span> for commands</div>
+        <div class="footer-r">NEON VAULT 2026</div>
+    </div>
+
+<script>
+(function() {
+    const body = document.getElementById('term-body');
+    const input = document.getElementById('cmd-input');
+    const cardsRow = document.getElementById('cards-row');
+    const GAMES_DATA = [
+  {
+    "id": "hotline-miami",
+    "title": "HOTLINE MIAMI",
+    "desc": "1989 Miami. Visceral violence. An answering machine message sends you down a bloody path through the criminal underworld.",
+    "path": "games/hotline-miami/index.html",
+    "accent": "#ff2a6d",
+    "tags": ["action", "stealth", "top-down"],
+    "controls": [
+      ["WASD", "Move"],
+      ["MOUSE", "Aim"],
+      ["LEFT CLICK", "Shoot / Attack"],
+      ["RIGHT CLICK", "Throw weapon"],
+      ["SPACE", "Pick up weapon"],
+      ["R", "Reload"],
+      ["E", "Interact / Open doors"]
+    ]
+  },
+  {
+    "id": "cuphead",
+    "title": "CUPHEAD",
+    "desc": "Run and gun through surreal 1930s hand-drawn cartoons. Every boss is a masterpiece. Every death is personal.",
+    "path": "games/cuphead/cuphead-main/index.html",
+    "accent": "#ffae00",
+    "tags": ["action", "platformer", "boss-rush"],
+    "controls": [
+      ["WASD / ARROWS", "Move"],
+      ["Z / J", "Shoot"],
+      ["X / K", "Special attack"],
+      ["SHIFT", "Dash / Parry"],
+      ["SPACE", "Lock aim direction"]
+    ]
+  },
+  {
+    "id": "getting-over-it",
+    "title": "GETTING OVER IT",
+    "desc": "A man in a cauldron with a hammer. Mountains of junk. Bennett Foddy narrates your descent into madness.",
+    "path": "games/getting-over-it/index.html",
+    "accent": "#05d9e8",
+    "tags": ["physics", "rage", "climbing"],
+    "controls": [
+      ["MOUSE", "Control hammer"],
+      ["CLICK + DRAG", "Swing hammer"],
+      ["SPACE", "Reset to checkpoint"]
+    ]
+  }
+];
+    let games = [];
+    let history = [];
+    let histIdx = -1;
+
+    function el(cls, text) {
+        const d = document.createElement('div');
+        d.className = 'term-line ' + cls;
+        d.textContent = text;
+        return d;
+    }
+
+    function htmlLine(html) {
+        const d = document.createElement('div');
+        d.className = 'term-line';
+        d.innerHTML = html;
+        return d;
+    }
+
+    function print(cls, text) {
+        body.appendChild(el(cls, text));
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function printHTML(html) {
+        body.appendChild(htmlLine(html));
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function promptLine(cmd) {
+        const d = document.createElement('div');
+        d.className = 'term-line';
+        d.innerHTML = '<span class="t-dim">neon:</span><span class="t-cyan">$</span> <span class="t-white">' + escHtml(cmd) + '</span>';
+        body.appendChild(d);
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function pad(str, len) {
+        while (str.length < len) str += ' ';
+        return str;
+    }
+
+    /* ── BOOT SEQUENCE ── */
+    async function boot() {
+        const lines = [
+            ['t-dim', 'NEON VAULT BIOS v1.0.0'],
+            ['t-dim', 'Copyright (c) 2026 NEON VAULT SYSTEMS'],
+            ['t-dim', ''],
+            ['t-cyan', 'Initializing game subsystem...'],
+            ['t-cyan', 'Loading game registry...... done.'],
+            ['t-green', games.length + ' game(s) detected.'],
+            ['t-dim', ''],
+            ['t-white t-bold', 'Welcome to NEON VAULT.'],
+            ['t-dim', 'Type "help" for available commands.'],
+            ['t-dim', ''],
+        ];
+
+        for (const [cls, txt] of lines) {
+            print(cls, txt);
+            await sleep(80);
+        }
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    /* ── COMMANDS ── */
+    const cmds = {
+        help() {
+            print('t-pink', 'AVAILABLE COMMANDS');
+            print('t-dim', '────────────────────────────────────');
+            const list = [
+                ['help',             'Show this message'],
+                ['ls',               'List all games'],
+                ['run <game>',       'Launch a game'],
+                ['controls <game>',  'Show game controls'],
+                ['clear',            'Clear terminal'],
+                ['about',            'About Neon Vault'],
+            ];
+            for (const [cmd, desc] of list) {
+                printHTML('<span class="t-cyan">' + pad(cmd, 20) + '</span><span class="t-dim">' + desc + '</span>');
+            }
+            print('t-dim', '');
+        },
+
+        ls() {
+            if (!games.length) { print('t-dim', 'No games found.'); return; }
+            print('t-pink', 'LOADED GAMES');
+            print('t-dim', '────────────────────────────────────');
+            for (let i = 0; i < games.length; i++) {
+                const g = games[i];
+                const num = String(i + 1).padStart(2, '0');
+                printHTML(
+                    '<span class="t-dim">' + num + '</span>  ' +
+                    '<span style="color:' + g.accent + '">' + pad(g.title, 18) + '</span>' +
+                    '<span class="t-dim">' + g.tags.join(', ') + '</span>'
+                );
+            }
+            print('t-dim', '');
+            print('t-dim', 'Type "run <name>" to play, "controls <name>" for keybinds.');
+            print('t-dim', '');
+        },
+
+        controls(args) {
+            if (!args) { print('t-yellow', 'Usage: controls <game name>'); return; }
+            const g = findGame(args);
+            if (!g) { print('t-yellow', 'Game "' + args + '" not found. Type "ls" for available games.'); return; }
+
+            print('t-pink', g.title + ' // CONTROLS');
+            print('t-dim', '────────────────────────────────────');
+
+            if (g.controls && g.controls.length) {
+                for (const [key, action] of g.controls) {
+                    printHTML(
+                        '<span class="t-green">' + pad(key, 18) + '</span>' +
+                        '<span class="t-white">' + action + '</span>'
+                    );
+                }
+            } else {
+                print('t-dim', 'No control info available for this game.');
+            }
+            print('t-dim', '');
+        },
+
+        run(args) {
+            if (!args) { print('t-yellow', 'Usage: run <game name>'); return; }
+            const g = findGame(args);
+            if (!g) { print('t-yellow', 'Game "' + args + '" not found. Type "ls" for available games.'); return; }
+
+            print('t-green', 'Launching ' + g.title + '...');
+            print('t-dim', '');
+
+            // show controls briefly then navigate
+            if (g.controls && g.controls.length) {
+                print('t-cyan', 'Controls:');
+                for (const [key, action] of g.controls) {
+                    printHTML(
+                        '  <span class="t-green">' + pad(key, 16) + '</span>' +
+                        '<span class="t-dim">' + action + '</span>'
+                    );
+                }
+                print('t-dim', '');
+            }
+
+            setTimeout(() => {
+                window.location.href = 'play.html?game=' + g.id;
+            }, 600);
+        },
+
+        clear() {
+            body.innerHTML = '';
+        },
+
+        about() {
+            print('t-pink', 'NEON VAULT');
+            print('t-dim', '────────────────────────────────────');
+            print('t-white', 'A browser game hub built for players, not platforms.');
+            print('t-dim', '');
+            print('t-dim', 'No downloads. No accounts. Just games.');
+            print('t-dim', '');
+            print('t-dim', 'To add a game: drop a folder in /games and add an entry to games.json');
+            print('t-dim', '');
+        }
+    };
+
+    function findGame(query) {
+        const q = query.toLowerCase().trim();
+        return games.find(g =>
+            g.id === q ||
+            g.title.toLowerCase() === q ||
+            g.title.toLowerCase().includes(q)
+        );
+    }
+
+    function exec(cmd) {
+        const trimmed = cmd.trim();
+        if (!trimmed) return;
+
+        history.push(trimmed);
+        histIdx = history.length;
+        promptLine(trimmed);
+
+        const parts = trimmed.split(/\s+/);
+        const name = parts[0].toLowerCase();
+        const args = parts.slice(1).join(' ');
+
+        if (cmds[name]) {
+            cmds[name](args);
+        } else {
+            print('t-yellow', 'Command not found: ' + name);
+            print('t-dim', 'Type "help" for available commands.');
+            print('t-dim', '');
+        }
+    }
+
+    /* ── INPUT HANDLING ── */
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            exec(input.value);
+            input.value = '';
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (histIdx > 0) {
+                histIdx--;
+                input.value = history[histIdx];
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (histIdx < history.length - 1) {
+                histIdx++;
+                input.value = history[histIdx];
+            } else {
+                histIdx = history.length;
+                input.value = '';
+            }
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            const val = input.value.trim().toLowerCase();
+            if (!val) return;
+            const words = val.split(/\s+/);
+            if (words.length === 1) {
+                const matches = Object.keys(cmds).filter(c => c.startsWith(words[0]));
+                if (matches.length === 1) input.value = matches[0] + ' ';
+                else if (matches.length > 1) {
+                    print('t-dim', matches.join('  '));
+                    body.scrollTop = body.scrollHeight;
+                }
+            } else if (words[0] === 'run' || words[0] === 'controls') {
+                const partial = words.slice(1).join(' ');
+                const matches = games.filter(g =>
+                    g.id.toLowerCase().includes(partial) ||
+                    g.title.toLowerCase().includes(partial)
+                );
+                if (matches.length === 1) input.value = words[0] + ' ' + matches[0].title.toLowerCase();
+                else if (matches.length > 1) {
+                    print('t-dim', matches.map(g => g.title).join('  '));
+                    body.scrollTop = body.scrollHeight;
+                }
+            }
+        }
+    });
+
+    // keep focus on input
+    document.addEventListener('click', () => input.focus());
+
+    /* ── MINI CARDS ── */
+    function renderCards() {
+        for (const g of games) {
+            const a = document.createElement('a');
+            a.className = 'mini-card';
+            a.href = 'play.html?game=' + g.id;
+            a.style.setProperty('--mc', g.accent);
+            a.innerHTML =
+                '<div class="mc-title">' + escHtml(g.title) + '</div>' +
+                '<div class="mc-desc">' + escHtml(g.desc.split('.')[0]) + '</div>';
+            cardsRow.appendChild(a);
+        }
+    }
+
+    /* ── INIT ── */
+    games = GAMES_DATA;
+    renderCards();
+    boot();
+    input.focus();
+})();
+</script>
+
+</body>
+</html>
