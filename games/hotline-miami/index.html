@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+    <title>HOTLINE MIAMI</title>
+    <base href="../../">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        canvas {
+            display: block;
+            border: none;
+            image-rendering: pixelated;
+        }
+        #loading-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: #ff2a6d;
+            text-shadow: 0 0 10px #ff2a6d, 0 0 20px #ff2a6d;
+            animation: pulse 1s infinite alternate;
+            z-index: 10;
+            pointer-events: none;
+        }
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+<script>
+  const OriginalXHR = window.XMLHttpRequest;
+
+  function InterceptedXHR() {
+    const xhr = new OriginalXHR();
+    let blocked = false;
+
+    const originalOpen = xhr.open;
+    xhr.open = function(method, url, async, user, password) {
+      blocked = (url.endsWith("steamon") || url.endsWith("achievements.dat") || url.endsWith("mask.tmp") || url.endsWith("surfaces") || url.endsWith("steamoff") || url.endsWith("skip") || url.endsWith("restartmusic") || url.endsWith("xbox") || url.endsWith("volume.dat") || url.endsWith("keyboard.dat") || url.endsWith("blood") || url.endsWith("alienware"));
+      return originalOpen.apply(this, arguments);
+    };
+
+    const originalSend = xhr.send;
+    xhr.send = function(body) {
+      if (blocked) {
+        setTimeout(() => {
+          this.readyState = 4;
+          this.status = 404;
+          this.statusText = "Not Found";
+          this.response = "Not Found";
+          this.responseText = "Not Found";
+          if (typeof this.onreadystatechange === "function") this.onreadystatechange();
+          if (typeof this.onload === "function") this.onload();
+        }, 0);
+        return;
+      }
+      return originalSend.apply(this, arguments);
+    };
+
+    return xhr;
+  }
+
+  window.XMLHttpRequest = function () {
+    return new InterceptedXHR();
+  };
+</script>
+
+    <div id="loading-text">LOADING</div>
+    <div class="gm4html5_div_class" id="gm4html5_div_id">
+        <canvas id="canvas" width="1920" height="1080">
+            <p>Your browser doesn't support HTML5 canvas.</p>
+        </canvas>
+    </div>
+    <script type="text/javascript" src="html5game/HotlineMiami.js"></script>
+    <script>
+        window.onload = () => {
+            GameMaker_Init();
+            setTimeout(() => {
+                const loader = document.getElementById("loading-text");
+                if (loader) loader.style.display = "none";
+            }, 4000);
+        };
+    </script>
+</body>
+</html>
